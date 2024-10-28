@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+    <head th:replace="~{layout/plantilla :: head}">
+        <title>Árbol</title>
+        <<style>
+    /* Estilos generales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        background-color: #ffffff;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        text-align: center; /* Centra el texto de las celdas */
+    }
+
+    /* Estilos del encabezado de la tarjeta */
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    /* Estilos para encabezados de la tabla */
+    .table thead th {
+        background-color: #343a40;
+        color: white;
+        font-weight: bold;
+        border: 1px solid #ddd;
+    }
+
+    /* Botones */
+    .btn {
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 14px;
+        margin: 0 2px;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border: none;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border: none;
+    }
+
+    /* Estilo adicional para el botón de buscar */
+    .input-group .form-control {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .input-group .btn-secondary {
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Modal */
+    .modal-header {
+        background-color: #007bff;
+        color: white;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+
+    /* Imagen de vista previa */
+    #blah {
+        margin-top: 10px;
+        border-radius: 8px;
+        display: none;
+        max-width: 100%;
+    }
+</style>
+
+    </head>
+    <body>
+        <header th:replace="layout/plantilla :: header"></header>
+
+        <!-- Sección para crear el botón de agregar... llamará a una ventana modal-->
+        <section th:fragment="botonesAgregar" class="py-4 mb-4 bg-light">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-3">   
+                        <button 
+                            type="button" 
+                            class="btn btn-primary btn-block" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#agregarArbol">
+                            <i class="fas fa-plus"></i> [[#{categoria.agregar}]]
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fragmento para agregar árbol, es la ventana modal -->
+        <section th:fragment="agregarArbol">
+            <div id="agregarArbol" 
+                 class="modal fade" 
+                 tabindex="-1" 
+                 aria-labelledby="exampleModalLabel" 
+                 aria-hidden="true">
+                <div class="modal-dialog modal-md">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title">[[#{arbol.agregar}]]</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div> 
+                        <form th:action="@{/arbol/guardar}" th:object="${arbol}"
+                              method="POST" class="was-validated" enctype="multipart/form-data">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="nombre_comun">[[#{arbol.nombre_comun}]]</label>
+                                    <input type="text" class="form-control" name="nombre_comun" required="true"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="tipo_flor">[[#{arbol.tipo_flor}]]</label>
+                                    <input type="text" class="form-control" name="tipo_flor"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dureza_madera">[[#{arbol.dureza_madera}]]</label>
+                                    <input type="text" class="form-control" name="dureza_madera"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="altura_promedio">[[#{arbol.altura_promedio}]]</label>
+                                    <input type="number" class="form-control" name="altura_promedio" step="0.01"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="descripcion">[[#{arbol.descripcion}]]</label>
+                                    <input type="text" class="form-control" name="descripcion" required="true"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="activo">[[#{arbol.activo}]]</label>
+                                    <input class="form-check-input" type="checkbox" name="activo" id="activo"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ruta_imagen">[[#{arbol.rutaImagen}]]</label>
+                                    <input class="form-control" type="file" name="ruta_imagen" onchange="readURL(this);"/>
+                                    <img id="blah" src="#" alt="your image" height="200" class="img-thumbnail"/>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary" type="submit">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección principal para mostrar la información de la entidad árbol -->
+        <section th:fragment="listadoArbol" id="arbol">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-9">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>[[#{arbol.listado}]]</h4>
+                            </div>
+                            <div th:if="${arboles != null and !arboles.empty}">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>[[#{arbol.nombre_comun}]]</th>
+                                            <th>[[#{arbol.tipo_flor}]]</th>
+                                            <th>[[#{arbol.dureza_madera}]]</th>
+                                            <th>[[#{arbol.altura_promedio}]]</th>
+                                            <th>[[#{arbol.descripcion}]]</th>
+                                            <th>[[#{arbol.activo}]]</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="arbol, contador : ${arboles}">
+                                            <td>[[${contador.count}]]</td>
+                                            <td>[[${arbol.nombre_comun}]]</td>
+                                            <td>[[${arbol.tipo_flor}]]</td>
+                                            <td>[[${arbol.dureza_madera}]]</td>
+                                            <td>[[${arbol.altura_promedio}]]</td>
+                                            <td>[[${arbol.descripcion}]]</td>
+                                            <td th:text="${arbol.activo} ? 'Activa' : 'Inactiva'" />
+                                            <td>
+                                                <a th:href="@{/arbol/eliminar/}+${arbol.id}" class="btn btn-danger">
+                                                    <i class="fas fa-trash"></i> [[#{accion.eliminar}]]
+                                                </a>
+                                                <a th:href="@{/arbol/modificar/}+${arbol.id}" class="btn btn-success btn-block">
+                                                    <i class="fas fa-pencil"></i> [[#{accion.modificar}]]
+                                                </a>
+
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center p-2" th:if="${arboles == null or arboles.empty}">
+                                <span>[[#{lista.vacia}]]</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <form th:action="@{/arbol/buscar}" method="GET">
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" placeholder="Buscar árbol..." name="nombre_comun" required="true"/>
+                                <button class="btn btn-secondary" type="submit">Buscar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            function readURL(input) {
+                if (input.files && input.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#blah').attr('src', e.target.result);
+                        $('#blah').show(); // Mostrar la imagen después de cargar
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                }
+            }
+        </script>
+    </body>
+</html>
